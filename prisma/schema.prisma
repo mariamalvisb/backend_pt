@@ -32,15 +32,18 @@ model User {
   role      Role
   createdAt DateTime @default(now())
 
+  // Guardaremos aquí el refresh token hasheado (opcional)
+  hashedRefreshToken String?
+
   // Perfiles opcionales: un usuario puede tener perfil de doctor o de paciente
   doctor  Doctor?
   patient Patient?
 }
 
 model Doctor {
-  id        String   @id @default(cuid())
-  userId    String   @unique
-  user      User     @relation(fields: [userId], references: [id])
+  id        String  @id @default(cuid())
+  userId    String  @unique
+  user      User    @relation(fields: [userId], references: [id])
   specialty String?
 
   // Prescripciones de este doctor
@@ -50,9 +53,9 @@ model Doctor {
 }
 
 model Patient {
-  id        String   @id @default(cuid())
-  userId    String   @unique
-  user      User     @relation(fields: [userId], references: [id])
+  id        String    @id @default(cuid())
+  userId    String    @unique
+  user      User      @relation(fields: [userId], references: [id])
   birthDate DateTime?
 
   // Prescripciones de este paciente
@@ -63,7 +66,7 @@ model Patient {
 
 model Prescription {
   id         String             @id @default(cuid())
-  code       String             @unique  // para mostrar o QR en PDF
+  code       String             @unique // para mostrar o QR en PDF
   status     PrescriptionStatus @default(pending)
   notes      String?
   createdAt  DateTime           @default(now())
@@ -71,10 +74,10 @@ model Prescription {
 
   // relaciones
   patientId String
-  patient   Patient   @relation(fields: [patientId], references: [id])
+  patient   Patient @relation(fields: [patientId], references: [id])
 
-  doctorId  String
-  doctor    Doctor    @relation(fields: [doctorId], references: [id])
+  doctorId String
+  doctor   Doctor @relation(fields: [doctorId], references: [id])
 
   items PrescriptionItem[]
 
@@ -89,8 +92,8 @@ model PrescriptionItem {
   prescriptionId String
   prescription   Prescription @relation(fields: [prescriptionId], references: [id])
 
-  name         String      // Producto digitado manualmente
-  dosage       String?     // dosis / unidades indicadas
-  quantity     Int?        // cantidad
-  instructions String?     // instrucciones adicionales
+  name         String // Producto digitado manualmente
+  dosage       String? // dosis / unidades indicadas
+  quantity     Int? // cantidad
+  instructions String? // instrucciones adicionales
 }
