@@ -9,21 +9,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ================= Enums =================
-
-enum Role {
-  admin
-  doctor
-  patient
-}
-
-enum PrescriptionStatus {
-  pending
-  consumed
-}
-
-// ================= Modelos =================
-
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
@@ -32,68 +17,81 @@ model User {
   role      Role
   createdAt DateTime @default(now())
 
-  // Guardaremos aquí el refresh token hasheado (opcional)
   hashedRefreshToken String?
 
-  // Perfiles opcionales: un usuario puede tener perfil de doctor o de paciente
   doctor  Doctor?
   patient Patient?
+
+  @@map("users")
+}
+
+enum Role {
+  admin
+  doctor
+  patient
 }
 
 model Doctor {
-  id        String  @id @default(cuid())
-  userId    String  @unique
-  user      User    @relation(fields: [userId], references: [id])
+  id        String   @id @default(cuid())
+  userId    String   @unique
   specialty String?
+  createdAt DateTime @default(now())
 
-  // Prescripciones de este doctor
-  prescriptions Prescription[]
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  prescriptions Prescription[] @relation("AuthoredBy")
 
-  @@index([userId])
+  @@map("doctors")
 }
 
 model Patient {
   id        String    @id @default(cuid())
   userId    String    @unique
-  user      User      @relation(fields: [userId], references: [id])
+  phone     String?
   birthDate DateTime?
+  createdAt DateTime  @default(now())
 
-  // Prescripciones de este paciente
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   prescriptions Prescription[]
 
-  @@index([userId])
+  @@map("patients")
 }
 
 model Prescription {
   id         String             @id @default(cuid())
-  code       String             @unique // para mostrar o QR en PDF
+  code       String             @unique
   status     PrescriptionStatus @default(pending)
   notes      String?
   createdAt  DateTime           @default(now())
   consumedAt DateTime?
 
-  // relaciones
   patientId String
-  patient   Patient @relation(fields: [patientId], references: [id])
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
 
-  doctorId String
-  doctor   Doctor @relation(fields: [doctorId], references: [id])
+  authorId String
+  author   Doctor @relation("AuthoredBy", fields: [authorId], references: [id], onDelete: Cascade)
 
   items PrescriptionItem[]
 
-  // Índices sugeridos
   @@index([status, createdAt])
   @@index([patientId])
-  @@index([doctorId])
+  @@index([authorId])
+  @@map("prescriptions")
+}
+
+enum PrescriptionStatus {
+  pending
+  consumed
 }
 
 model PrescriptionItem {
-  id             String       @id @default(cuid())
+  id             String  @id @default(cuid())
+  name           String
+  dosage         String?
+  quantity       Int?
+  instructions   String?
   prescriptionId String
-  prescription   Prescription @relation(fields: [prescriptionId], references: [id])
 
-  name         String // Producto digitado manualmente
-  dosage       String? // dosis / unidades indicadas
-  quantity     Int? // cantidad
-  instructions String? // instrucciones adicionales
+  prescription Prescription @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
+
+  @@map("prescription_items")
 }
