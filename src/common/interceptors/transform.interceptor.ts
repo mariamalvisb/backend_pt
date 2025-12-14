@@ -28,7 +28,6 @@ export class TransformInterceptor<T> implements NestInterceptor<
 
     return next.handle().pipe(
       map((data) => {
-        // Si alguna ruta devuelve archivo/stream (ej: PDF), NO lo envolvemos.
         if (data instanceof StreamableFile) return data;
 
         return {

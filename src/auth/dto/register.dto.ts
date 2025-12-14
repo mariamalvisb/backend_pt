@@ -1,35 +1,46 @@
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
+  IsDateString,
   IsEmail,
-  IsEnum,
+  IsIn,
   IsOptional,
   IsString,
   MinLength,
-  IsDateString,
+  ValidateIf,
 } from 'class-validator';
 import { Role } from '@prisma/client';
 
 export class RegisterDto {
+  @ApiProperty({ example: 'newuser@test.com' })
   @IsEmail()
   email: string;
 
+  @ApiProperty({ example: 'secret123', minLength: 6 })
   @IsString()
   @MinLength(6)
   password: string;
 
+  @ApiProperty({ example: 'Usuario Prueba' })
   @IsString()
   name: string;
 
-  // Sólo usaremos doctor | patient aquí; admin se creará por seed
-  @IsEnum(Role)
+  // Solo doctor | patient
+  @ApiProperty({
+    enum: [Role.doctor, Role.patient],
+    example: Role.patient,
+  })
+  @IsIn([Role.doctor, Role.patient])
   role: Role;
 
   // Para médicos
-  @IsOptional()
+  @ApiPropertyOptional({ example: 'Medicina general' })
+  @ValidateIf((o) => o.role === Role.doctor)
   @IsString()
   specialty?: string;
 
   // Para pacientes
-  @IsOptional()
+  @ApiPropertyOptional({ example: '1995-03-22' })
+  @ValidateIf((o) => o.role === Role.patient)
   @IsDateString()
   birthDate?: string;
 }

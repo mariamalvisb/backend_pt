@@ -30,13 +30,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
       if (typeof r === 'string') {
         message = r;
       } else {
-        // típico: { message, error, statusCode }
         message = (r as any).message ?? exception.message ?? 'Error';
         details = r;
       }
     } else if (exception?.name?.includes('Prisma')) {
-      // Prisma (sin importar tipos, para no romper builds)
-      // https://www.prisma.io/docs/orm/reference/error-reference
       const code = exception?.code;
       details = {
         code,
