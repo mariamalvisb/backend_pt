@@ -23,54 +23,275 @@
 
 ## Description
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+API para autenticación y gestión de usuarios (admin), doctores, pacientes y prescripciones .
+Incluye Swagger, seed con datos de prueba y paginación, siguiendo el flujo de roles (doctor/patient/admin).
 
-## Project setup
+## 🚀 Despliegue
+
+- **API (Railway):** https://backendpt-production.up.railway.app/
+- **Swagger (Docs):** https://backendpt-production.up.railway.app/docs
+- **Front:** https://frontend-pt-steel.vercel.app/
+
+## 🏗️ Arquitectura del proyecto
+
+El backend está organizado siguiendo la arquitectura típica de **NestJS por módulos**, separando responsabilidades en:
+
+- **Controllers**: exponen endpoints HTTP y validan/reciben DTOs.
+- **Services**: contienen la lógica de negocio.
+- **Modules**: agrupan controllers + services + providers.
+- **Prisma**: capa de acceso a datos (PostgreSQL) centralizada en `PrismaService`.
+- **Common**: componentes transversales (interceptors/filters) para estandarizar respuestas y errores.
+- **Auth**: autenticación JWT, guards, strategies y helpers para RBAC.
+
+### Estructura de carpetas
+
+```txt
+prescriptions-api/
+├─ prisma/
+│  ├─ migrations/              # Migraciones Prisma
+│  ├─ schema.prisma            # Modelo de datos Prisma
+│  └─ seed.ts                  # Seed con datos de prueba
+│
+├─ src/
+│  ├─ auth/
+│  │  ├─ decorators/           # Decoradores (por ejemplo, para roles)
+│  │  ├─ dto/                  # DTOs de auth
+│  │  ├─ guards/               # Guards de autenticación/autorización
+│  │  ├─ strategies/           # Strategies JWT (access/refresh)
+│  │  ├─ auth.controller.ts    # Endpoints de autenticación
+│  │  ├─ auth.module.ts
+│  │  └─ auth.service.ts
+│  │
+│  ├─ common/
+│  │  ├─ filters/              # Filtros globales (errores)
+│  │  └─ interceptors/         # Interceptors (respuesta estándar, etc.)
+│  │
+│  ├─ doctor/
+│  │  ├─ doctor.controller.ts  # Endpoints de doctores
+│  │  ├─ doctor.module.ts
+│  │  └─ doctor.service.ts
+│  │
+│  ├─ patients/
+│  │  ├─ patients.controller.ts # Endpoints de pacientes
+│  │  ├─ patients.module.ts
+│  │  └─ patients.service.ts
+│  │
+│  ├─ prescriptions/
+│  │  ├─ dto/                   # DTOs de prescripciones
+│  │  ├─ prescriptions.controller.ts # Endpoints de prescripciones (+ PDF)
+│  │  ├─ prescriptions.module.ts
+│  │  └─ prescriptions.service.ts    # Lógica (incluye generación PDF)
+│  │
+│  ├─ prisma/
+│  │  ├─ prisma.module.ts        # Módulo Prisma
+│  │  └─ prisma.service.ts       # PrismaService (DB)
+│  │
+│  ├─ users/
+│  │  └─ ...                     # Módulo de usuarios (admin)
+│  │
+│  ├─ app.controller.ts
+│  ├─ app.controller.spec.ts
+│  ├─ app.module.ts
+│  ├─ app.service.ts
+│  └─ main.ts                    # Bootstrap + config global
+│
+├─ dist/                         # Build compilado
+├─ docker-compose.yml            # PostgreSQL en local con Docker
+├─ nixpacks.toml                 # Config de build/deploy (Railway)
+├─ package.json
+└─ README.md
+```
+
+## 📚 Documentación de Endpoints (Swagger)
+
+- **Local:** http://localhost:4000/docs
+- **Producción (Railway):** https://backendpt-production.up.railway.app/docs
+
+En Swagger encontrarás los módulos principales:
+
+-Auth
+-Users (admin)
+-Doctors
+-Patients
+-Prescriptions
+
+## ✅ Requisitos
+
+- Node.js (recomendado LTS)
+- npm
+- PostgreSQL (local o Docker)
+
+---
+
+## 🔐 Variables de entorno
+
+Crea un archivo `.env` en la raíz:
+
+```env
+# Server
+PORT=4000
+
+# Database
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/prescriptions?schema=public"
+
+# JWT
+JWT_ACCESS_SECRET="replace_me_access_secret"
+JWT_REFRESH_SECRET="replace_me_refresh_secret"
+JWT_ACCESS_EXPIRES_IN_SEC=900
+JWT_REFRESH_EXPIRES_IN_SEC=604800
+```
+
+## PostgreSQL con Docker (recomendado)
+
+Si ya tienes docker-compose.yml, solo ejecuta:
+
+```bash
+$ docker compose up -d
+```
+
+Si no lo tienes, este es un ejemplo funcional:
+
+docker-compose.yml
+
+```yaml
+version: '3.9'
+
+services:
+  db:
+    image: postgres:16
+    container_name: prescriptions-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: prescriptions
+    ports:
+      - '5432:5432'
+    volumes:
+      - prescriptions_db_data:/var/lib/postgresql/data
+
+volumes:
+  prescriptions_db_data:
+```
+
+Para bajar docker:
+
+## Deployment
+
+```bash
+$ docker compose down
+```
+
+## PostgreSQL instalado localmente
+
+1. Crea una base de datos (ej: prescriptions-api)
+2. Ajusta tu DATABASE_URL en env.
+
+## Intalación
 
 ```bash
 $ npm install
 ```
 
-## Compile and run the project
+## Migraciones y Seed
+
+1.Migraciones
+
+Para aplicar migraciones:
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+$ npx prisma migrate deploy
 ```
 
-## Run tests
+Si estás en local y necesitas crear migraciones:
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+$ npx prisma migrate dev
 ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+2. Seed (Limpia y carga datos)
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+$ npm run seed
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+El seed:
+-borra datos existentes (tablas relacionadas)
+-crea usuarios de prueba (admin/doctor/pacientes)
+-crea prescripciones con estados pending y consumed
 
-## Resources
+👤 Cuentas de prueba
+-Admin: admin@test.com / admin123
+-Doctor: dr@test.com / dr123
+-Paciente A: patient@test.com / patient123
+-Paciente B: patient2@test.com / patient123
+
+## Decisiones tecnicas
+
+Autenticación (JWT + Refresh)
+
+-login devuelve accessToken + refreshToken.
+
+-accessToken para consumir endpoints protegidos.
+
+-refreshToken para renovar sesión.
+
+RBAC (Roles)
+
+-Control de acceso por roles usando guards/decorators:
+
+-admin: gestión de usuarios y endpoints administrativos.
+
+-doctor: crea y consulta prescripciones (propias).
+
+-patient: consulta sus prescripciones y puede consumirlas.
+
+-Respuesta estándar (TransformInterceptor)
+
+La API responde en un wrapper consistente:
+
+```json
+{
+  "statusCode": 200,
+  "timestamp": "2025-12-15T00:00:00.000Z",
+  "path": "/ruta",
+  "method": "GET",
+  "data": {}
+}
+```
+
+Manejo centralizado de errores (AllExceptionsFilter)
+Errores normalizados y log del endpoint que falló.
+
+Paginación
+Listados soportan page y limit, devolviendo meta:
+
+```json
+{
+  "data": [],
+  "meta": { "total": 8, "page": 1, "limit": 10, "totalPages": 1 }
+}
+```
+
+Generación de PDF
+
+-Endpoint de descarga: GET /prescriptions/:id/pdf
+-Genera PDF con pdfkit
+-Autorización: patient (solo dueño) y admin
+
+## Notas rapidas
+
+Notas rápidas de uso
+
+1. Levanta la DB (Docker o local)
+2. Configura .env
+3. Ejecuta migraciones: npx prisma migrate deploy
+4. Ejecuta seed: npm run seed
+5. Corre la API: npm run start:dev
+6. Abre Swagger y prueba:
+   -haz login con una cuenta del seed
+   -usa Authorize pegando el Bearer <accessToken>
+   -valida endpoints según rol
 
 Check out a few resources that may come in handy when working with NestJS:
 
