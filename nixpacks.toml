@@ -2,7 +2,14 @@
 cmds = ["npm ci --include=dev"]
 
 [phases.build]
-cmds = ["npm run build"]
+cmds = [
+  "npx prisma generate",
+  "npm run build",
+  "echo '--- CHECK dist ---'",
+  "ls -la",
+  "ls -la dist || true",
+  "find dist -maxdepth 4 -type f -name 'main.js' -print || true"
+]
 
 [start]
 cmd = "npm run start:prod"
